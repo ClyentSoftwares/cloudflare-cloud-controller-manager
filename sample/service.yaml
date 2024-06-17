@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-world
+  annotations:
+    cloudflare-load-balancer.clyent.dev/hostname: woah.dropmap.dev
+    cloudflare-load-balancer.clyent.dev/monitor-path: /health
+    cloudflare-load-balancer.clyent.dev/monitor-allow-insecure: true
+spec:
+  selector:
+    app: hello-world
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: LoadBalancer
