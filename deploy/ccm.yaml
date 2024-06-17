@@ -79,8 +79,7 @@ spec:
                 secretKeyRef:
                   key: CLOUDFLARE_ACCOUNT_ID
                   name: cloudflare-secret
-          image: ghcr.io/clyentsoftwares/cloudflare-cloud-controller-manager:latest
-          imagePullPolicy: Always #TODO remove
+          image: ghcr.io/clyentsoftwares/cloudflare-cloud-controller-manager:v0.0.1
           resources:
             requests:
               cpu: 100m
