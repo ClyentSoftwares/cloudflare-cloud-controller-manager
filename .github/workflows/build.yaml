@@ -5,20 +5,6 @@ on:
     types: [published]
 
 jobs:
-  release-please:
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    outputs:
-      release_created: ${{ steps.release-please.outputs.release_created }}
-      tag_name: ${{ steps.release-please.outputs.tag_name }} # e.g. v1.0.0
-      version: ${{ steps.release-please.outputs.version }} # e.g. 1.0.0
-      all: ${{ toJSON(steps.release-please.outputs) }}
-    steps:
-      - uses: google-github-actions/release-please-action@v3
-        id: release-please
-        with:
-          command: manifest
-
   docker:
     runs-on: ubuntu-latest
     steps:
@@ -26,7 +12,7 @@ jobs:
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v2
 
-      - name: Login to Docker Hub
+      - name: Login to Github Docker Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -39,8 +25,7 @@ jobs:
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          target: full
-          tags: ghcr.io/clyentsoftwares/cloudflare-cloud-controller-manager:${{ needs.release-please.outputs.version }}
+          tags: ghcr.io/clyentsoftwares/cloudflare-cloud-controller-manager:${{ github.event.release.tag_name }}
           build-args: |
-            VERSION=${{ needs.release-please.outputs.version }}
+            VERSION=${{ github.event.release.tag_name }}
           platforms: linux/amd64,linux/arm64
