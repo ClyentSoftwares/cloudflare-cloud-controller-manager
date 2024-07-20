@@ -1,7 +1,6 @@
 package cloudflare
 
 import (
-	"encoding/base64"
 	"io"
 
 	"github.com/ClyentSoftwares/cloudflare-cloud-controller-manager/internal/config"
@@ -32,22 +31,7 @@ func newCloud(_ io.Reader) (cloudprovider.Interface, error) {
 		return nil, err
 	}
 
-	apiToken, err := base64.StdEncoding.DecodeString(cfg.CloudflareClient.Token)
-	if err != nil {
-		return nil, err
-	}
-
-	zoneId, err := base64.StdEncoding.DecodeString(cfg.CloudflareClient.ZoneId)
-	if err != nil {
-		return nil, err
-	}
-
-	accountId, err := base64.StdEncoding.DecodeString(cfg.CloudflareClient.AccountId)
-	if err != nil {
-		return nil, err
-	}
-
-	cloudflareClient, err := cloudflare.NewCloudflareAPI(string(apiToken), string(zoneId), string(accountId))
+	cloudflareClient, err := cloudflare.NewCloudflareAPI(cfg.CloudflareClient.Token, cfg.CloudflareClient.ZoneId, cfg.CloudflareClient.AccountId)
 
 	if err != nil {
 		return nil, err
