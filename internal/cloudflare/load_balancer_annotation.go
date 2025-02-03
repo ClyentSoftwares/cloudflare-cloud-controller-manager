@@ -19,6 +19,12 @@ const (
 
 	// serviceAnnotationLoadBalancerMonitorType defines the type of monitor e.g tcp, http, https
 	serviceAnnotationLoadBalancerMonitorType = "cloudflare-load-balancer.clyent.dev/monitor-type"
+
+	// serviceAnnotationLoadBalancerMonitorProbeZone assign this monitor to emulate the specified zone while probing. This parameter is only valid for HTTP and HTTPS monitors.
+	serviceAnnotationLoadBalancerMonitorProbeZone = "cloudflare-load-balancer.clyent.dev/monitor-probe-zone"
+
+	// serviceAnnotationLoadBalancerMonitorHeader defines the request header used to pass additional information within HTTP request. Currently supported header is 'Host'.
+	serviceAnnotationLoadBalancerMonitorHeader = "cloudflare-load-balancer.clyent.dev/monitor-header"
 )
 
 var (
@@ -64,4 +70,22 @@ func GetLoadBalancerMonitorType(service *v1.Service) (string, error) {
 	}
 
 	return loadBalancerMonitorType, nil
+}
+
+func GetLoadBalancerMonitorProbeZone(service *v1.Service) (string, error) {
+	loadBalancerMonitorProbeZone, ok := service.Annotations[serviceAnnotationLoadBalancerMonitorProbeZone]
+	if !ok {
+		return "http", nil
+	}
+
+	return loadBalancerMonitorProbeZone, nil
+}
+
+func GetLoadBalancerMonitorHeader(service *v1.Service) ([]string, error) {
+	loadBalancerMonitorHeader, ok := service.Annotations[serviceAnnotationLoadBalancerMonitorHeader]
+	if !ok {
+		return nil, nil
+	}
+
+	return []string{loadBalancerMonitorHeader}, nil
 }

@@ -3,9 +3,11 @@ kind: Service
 metadata:
   name: hello-world
   annotations:
-    cloudflare-load-balancer.clyent.dev/hostname: woah.dropmap.dev
+    cloudflare-load-balancer.clyent.dev/hostname: hello.test.com
     cloudflare-load-balancer.clyent.dev/monitor-path: /health
     cloudflare-load-balancer.clyent.dev/monitor-allow-insecure: true
+    cloudflare-load-balancer.clyent.dev/monitor-probe-zone: 'test.com'
+    cloudflare-load-balancer.clyent.dev/monitor-header: 'ingress.test.com'
 spec:
   selector:
     app: hello-world

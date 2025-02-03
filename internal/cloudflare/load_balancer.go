@@ -188,6 +188,8 @@ func (l *loadBalancers) createLoadBalancerMonitorIfNotExist(ctx context.Context,
 		monitorPath, _ := GetLoadBalancerMonitorPath(service)
 		monitorAllowInsecure, _ := GetLoadBalancerMonitorAllowInsecure(service)
 		monitorType, _ := GetLoadBalancerMonitorType(service)
+		probeZone, _ := GetLoadBalancerMonitorProbeZone(service)
+		header, _ := GetLoadBalancerMonitorHeader(service)
 
 		// Try creating a new load balancer monitor
 		monitor, err = l.client.CreateLoadBalancerMonitor(ctx, cloudflare.LoadBalancerMonitor{
@@ -202,6 +204,10 @@ func (l *loadBalancers) createLoadBalancerMonitorIfNotExist(ctx context.Context,
 			Retries:         2,
 			FollowRedirects: true,
 			AllowInsecure:   monitorAllowInsecure,
+			ProbeZone:       probeZone,
+			Header: map[string][]string{
+				"Host": header,
+			},
 		})
 
 		return monitor, err
