@@ -1,24 +1,27 @@
+// Package cloudflare implements a kubernetes cloud provider for cloudflare
+// load balancers.
 package cloudflare
 
 import (
+	"context"
 	"io"
+	"time"
 
+	"github.com/ClyentSoftwares/cloudflare-cloud-controller-manager/internal/cfapi"
 	"github.com/ClyentSoftwares/cloudflare-cloud-controller-manager/internal/config"
-	"github.com/ClyentSoftwares/cloudflare-cloud-controller-manager/pkg/cloudflare"
 	cloudprovider "k8s.io/cloud-provider"
 	"k8s.io/klog/v2"
 )
 
-const (
-	providerName = "cloudflare"
-)
+const providerName = "cloudflare"
+
+const credentialValidationTimeout = 30 * time.Second
 
 // providerVersion is set by the build process using -ldflags -X.
-var providerVersion = "vUnknown"
+var providerVersion = "unknown"
 
 type cloud struct {
-	cfg    config.CloudflareCCMConfiguration
-	Client *cloudflare.CloudflareAPI
+	loadBalancers *loadBalancers
 }
 
 func newCloud(_ io.Reader) (cloudprovider.Interface, error) {
@@ -26,57 +29,45 @@ func newCloud(_ io.Reader) (cloudprovider.Interface, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = cfg.Validate()
-	if err != nil {
+	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
 
-	cloudflareClient, err := cloudflare.NewCloudflareAPI(cfg.CloudflareClient.Token, cfg.CloudflareClient.ZoneId, cfg.CloudflareClient.AccountId)
+	client := cfapi.NewClient(
+		cfg.CloudflareClient.Token,
+		cfg.CloudflareClient.ZoneID,
+		cfg.CloudflareClient.AccountID,
+		klog.Background().WithName("cfapi"),
+	)
 
-	if err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), credentialValidationTimeout)
+	defer cancel()
+	if err := client.ValidateCredentials(ctx); err != nil {
 		return nil, err
 	}
 
-	klog.Info("Cloudflare Client init")
+	klog.InfoS("cloudflare cloud controller manager started", "version", providerVersion)
 
-	err = cloudflareClient.ValidateAll()
-
-	if err != nil {
-		klog.Info("Error Validating account ", err)
-		return nil, err
-	}
-
-	klog.Info("Validated account sucessfully")
-
-	klog.Infof("Cloudflare k8s cloud controller %s started\n", providerVersion)
-
-	return &cloud{
-		cfg:    cfg,
-		Client: cloudflareClient,
-	}, nil
+	return &cloud{loadBalancers: newLoadBalancers(client)}, nil
 }
 
-func (c *cloud) Initialize(_ cloudprovider.ControllerClientBuilder, _ <-chan struct{}) {
+func (c *cloud) Initialize(_ cloudprovider.ControllerClientBuilder, _ <-chan struct{}) {}
+
+func (c *cloud) LoadBalancer() (cloudprovider.LoadBalancer, bool) {
+	return c.loadBalancers, true
 }
 
 func (c *cloud) Instances() (cloudprovider.Instances, bool) {
-	// Replaced by InstancesV2
 	return nil, false
 }
 
+// InstancesV2 is not implemented as cloudflare does not host the cluster nodes
 func (c *cloud) InstancesV2() (cloudprovider.InstancesV2, bool) {
 	return nil, false
 }
 
 func (c *cloud) Zones() (cloudprovider.Zones, bool) {
-	// Replaced by InstancesV2
 	return nil, false
-}
-
-func (c *cloud) LoadBalancer() (cloudprovider.LoadBalancer, bool) {
-	lbOps := &LoadBalancerOps{}
-
-	return newLoadbalancers(c.Client, lbOps), true
 }
 
 func (c *cloud) Clusters() (cloudprovider.Clusters, bool) {
