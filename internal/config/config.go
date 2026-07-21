@@ -1,28 +1,27 @@
+// Package config reads the controller configuration from the environment.
 package config
 
 import (
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 )
 
 const (
 	cloudflareAPIToken  = "CLOUDFLARE_API_TOKEN"
-	cloudflareZoneId    = "CLOUDFLARE_ZONE_ID"
-	cloudflareAccountId = "CLOUDFLARE_ACCOUNT_ID"
-
-	debug = "DEBUG"
+	cloudflareZoneID    = "CLOUDFLARE_ZONE_ID"
+	cloudflareAccountID = "CLOUDFLARE_ACCOUNT_ID"
 )
 
+// CloudflareClientConfiguration holds the credentials for the Cloudflare API.
 type CloudflareClientConfiguration struct {
 	Token     string
-	ZoneId    string
-	AccountId string
-	Debug     bool
+	ZoneID    string
+	AccountID string
 }
 
+// CloudflareCCMConfiguration is the controller's full configuration.
 type CloudflareCCMConfiguration struct {
 	CloudflareClient CloudflareClientConfiguration
 }
@@ -68,17 +67,12 @@ func Read() (CloudflareCCMConfiguration, error) {
 		errs = append(errs, err)
 	}
 
-	cfg.CloudflareClient.ZoneId, err = readFromEnvOrFile(cloudflareZoneId)
+	cfg.CloudflareClient.ZoneID, err = readFromEnvOrFile(cloudflareZoneID)
 	if err != nil {
 		errs = append(errs, err)
 	}
 
-	cfg.CloudflareClient.AccountId, err = readFromEnvOrFile(cloudflareAccountId)
-	if err != nil {
-		errs = append(errs, err)
-	}
-
-	cfg.CloudflareClient.Debug, err = getEnvBool(debug, false)
+	cfg.CloudflareClient.AccountID, err = readFromEnvOrFile(cloudflareAccountID)
 	if err != nil {
 		errs = append(errs, err)
 	}
@@ -90,7 +84,8 @@ func Read() (CloudflareCCMConfiguration, error) {
 	return cfg, nil
 }
 
-func (c CloudflareCCMConfiguration) Validate() (err error) {
+// Validate checks that all required configuration values are set.
+func (c CloudflareCCMConfiguration) Validate() error {
 	// Collect all errors and return them as one.
 	// This helps users because they will see all the errors at once
 	// instead of having to fix them one by one.
@@ -100,24 +95,16 @@ func (c CloudflareCCMConfiguration) Validate() (err error) {
 		errs = append(errs, fmt.Errorf("environment variable %q is required", cloudflareAPIToken))
 	}
 
+	if c.CloudflareClient.ZoneID == "" {
+		errs = append(errs, fmt.Errorf("environment variable %q is required", cloudflareZoneID))
+	}
+
+	if c.CloudflareClient.AccountID == "" {
+		errs = append(errs, fmt.Errorf("environment variable %q is required", cloudflareAccountID))
+	}
+
 	if len(errs) > 0 {
 		return errors.Join(errs...)
 	}
 	return nil
-}
-
-// getEnvBool returns the boolean parsed from the environment variable with the given key and a potential error
-// parsing the var. Returns the default value if the env var is unset.
-func getEnvBool(key string, defaultValue bool) (bool, error) {
-	v, ok := os.LookupEnv(key)
-	if !ok {
-		return defaultValue, nil
-	}
-
-	b, err := strconv.ParseBool(v)
-	if err != nil {
-		return false, fmt.Errorf("failed to parse %s: %v", key, err)
-	}
-
-	return b, nil
 }

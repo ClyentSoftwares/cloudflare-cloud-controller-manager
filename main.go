@@ -1,3 +1,5 @@
+// The cloudflare-cloud-controller-manager provisions Cloudflare load
+// balancers for Kubernetes Services of type LoadBalancer.
 package main
 
 import (
@@ -11,7 +13,7 @@ import (
 	"k8s.io/cloud-provider/options"
 	"k8s.io/component-base/cli"
 	cliflag "k8s.io/component-base/cli/flag"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 
 	_ "github.com/ClyentSoftwares/cloudflare-cloud-controller-manager/internal/cloudflare"
 )
